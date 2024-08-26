@@ -13,11 +13,11 @@ public:
         : Node("lidar_vehicle_detection") {
         // Subscriber
         subscription_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-            "/truck0/lidar0", rclcpp::SensorDataQoS(),
+            "lidar0", rclcpp::SensorDataQoS(),
             std::bind(&LidarVehicleDetection::processLidarData, this, std::placeholders::_1));
 
         // Publisher
-        publisher_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/detected_vehicles", 10);
+        publisher_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("detected_vehicles", 10);
     }
 
 private:
@@ -40,7 +40,7 @@ private:
         seg.setOptimizeCoefficients(true);
         seg.setModelType(pcl::SACMODEL_PLANE);
         seg.setMethodType(pcl::SAC_RANSAC);
-        seg.setDistanceThreshold(0.2);
+        seg.setDistanceThreshold(0.05);
         seg.setInputCloud(cloud_filtered);
         seg.segment(*inliers, *coefficients);
 
@@ -57,7 +57,7 @@ private:
         std::vector<pcl::PointIndices> cluster_indices;
         pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
         ec.setClusterTolerance(0.5);
-        ec.setMinClusterSize(100);
+        ec.setMinClusterSize(10);
         ec.setMaxClusterSize(25000);
         ec.setSearchMethod(tree);
         ec.setInputCloud(cloud_no_ground);
@@ -79,9 +79,9 @@ private:
             float cluster_width = max_point.y() - min_point.y();
             float cluster_height = max_point.z() - min_point.z();
 
-            if (cluster_length > 1.5 && cluster_length < 4.5 &&
-                cluster_width > 1.5 && cluster_width < 3.0 &&
-                cluster_height > 1.0 && cluster_height < 2.5) {
+            if (cluster_length >= 0.0 && cluster_length < 9.5 &&
+                cluster_width > 0.5 && cluster_width < 9.0 &&
+                cluster_height > 0.1 && cluster_height < 5.5) {
                 *vehicle_clusters += *cloud_cluster;
             }
         }
